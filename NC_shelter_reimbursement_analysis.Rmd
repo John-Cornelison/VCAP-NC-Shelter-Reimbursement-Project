@@ -1,0 +1,149 @@
+---
+title: "NC_shelter_reimbursement_analysis"
+author: "John Cornelison"
+date: "12/14/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r, include = FALSE}
+#Working Directory
+setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+
+###Libraries
+library(plotly)
+library(tidyverse)
+library(readxl)
+
+
+###Reading in Data
+NC_shelter_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Shelter Final")
+NC_reimbursements_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Reimbursement Final")
+
+```
+
+
+```{r, include = FALSE}
+#Data Cleaning
+
+
+species_table <- NC_shelter_raw %>% 
+  select(1:4, 7:874) %>% 
+  pivot_longer(
+    cols = 5:872,
+    names_to = c("Species", "Category"),
+    names_sep = "_",
+    values_to = c("Count")) %>%
+  pivot_wider(
+    names_from = "Category",
+    values_from = "Count") %>% 
+  mutate(remove_row = case_when(Intake == 0 & Adopted == 0 & Euthanized == 0 & Returned == 0 & Euthanized == 0 ~ TRUE,
+                                TRUE ~ FALSE)) %>% 
+  filter(remove_row == FALSE) %>% 
+  mutate(Outcome = Adopted + Euthanized + Returned) %>% 
+  select(-remove_row) %>% 
+  relocate(Outcome, .after = Intake)
+
+expenses_table <- NC_shelter_raw %>% 
+  select(1:6) %>% 
+  group_by(Operating_Expense) %>% 
+  mutate(Operating_Expense = as.numeric(Operating_Expense),
+         Cost_Per_Animal = as.numeric(Cost_Per_Animal),
+         LIC = as.numeric(LIC)) 
+
+
+reimbursements_table <- NC_reimbursements_raw %>% 
+  mutate(across(c(5:28), as.numeric))
+
+
+```
+
+
+# Graphics
+
+There were 3 different outcomes listed for each shelter, adopted, returned, and euthanized. The adopted, returned, and euthanized rate is calculated by outcome / sum(3 outcomes).
+
+
+```{r, echo = FALSE, warning= FALSE, include=FALSE}
+
+aggregate_by_year <- species_table %>%
+  mutate(Species = case_when(Species == "Dog" ~ "Dog",
+                             Species == "Cat" ~ "Cat",
+                             TRUE ~ "Other")) %>%
+  group_by(Year, Species) %>% 
+  summarise(total_intakes = sum(Intake),
+            total_outcomes = sum(Outcome),
+            total_adopted = sum(Adopted),
+            total_returned = sum(Returned),
+            total_euthanized = sum(Euthanized)) %>% 
+  plot_ly(type = 'scatter', mode = 'line', x = ~Year, y = ~total_intakes, color = ~Species)
+
+
+
+outcome_rates_by_year <- species_table %>%
+  filter(Species %in% c("Dog", "Cat", "Raccoon", "Rabbit", "Opossum")) %>% 
+  group_by(Species, Year) %>% 
+  summarise(total_outcomes = sum(Outcome),
+            total_adopted = sum(Adopted),
+            total_returned = sum(Returned),
+            total_euthanized = sum(Euthanized)) %>% 
+  mutate(adopted_rate = round(total_adopted/total_outcomes, 2),
+         returned_rate = round(total_returned/total_outcomes, 2),
+         euthanized_rate = round(total_euthanized/total_outcomes, 2))
+
+
+adopted_rate <- plot_ly(data = outcome_rates_by_year, type = 'scatter', mode = 'line', x = ~Year, y = ~adopted_rate, color = ~Species)
+
+returned_rate <- plot_ly(data = outcome_rates_by_year, type = 'scatter', mode = 'line', x = ~Year, y = ~returned_rate, color = ~Species)
+
+euthanized_rate <- plot_ly(data = outcome_rates_by_year, type = 'scatter', mode = 'line', x = ~Year, y = ~euthanized_rate, color = ~Species)
+
+```
+
+
+### Total Intakes by Year in North Carolina
+
+
+```{r, echo = FALSE}
+aggregate_by_year
+
+```
+
+
+### Adoption Rate of Dogs, Cats, Raccoons, Rabbits, and Oposssums
+
+
+```{r, echo = FALSE}
+
+adopted_rate
+
+```
+
+
+### Return Rate of Dogs, Cats, Raccoons, Rabbits, and Oposssums
+
+
+```{r, echo = FALSE}
+
+returned_rate
+
+
+```
+
+
+### Euthanization Rate of Dogs, Cats, Raccoons, Rabbits, and Oposssums
+
+```{r, echo = FALSE}
+
+
+euthanized_rate
+
+
+```
+
