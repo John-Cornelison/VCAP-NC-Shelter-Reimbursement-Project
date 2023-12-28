@@ -65,6 +65,16 @@ reimbursements_table <- NC_reimbursements_raw %>%
 ```
 
 
+```{r}
+animal_count <- species_table %>% 
+  group_by(Species) %>% 
+  summarise(Count = sum(Intake)) 
+
+sum(animal_count$Count)
+
+```
+
+
 # Graphics
 
 There were 3 different outcomes listed for each shelter, adopted, returned, and euthanized. The adopted, returned, and euthanized rate is calculated by outcome / sum(3 outcomes).
