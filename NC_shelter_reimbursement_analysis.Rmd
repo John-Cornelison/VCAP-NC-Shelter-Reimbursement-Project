@@ -14,7 +14,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, include = FALSE}
 #Working Directory
-setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+#Desktop
+#setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+
+#Laptop
+setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+
 
 ###Libraries
 library(plotly)
