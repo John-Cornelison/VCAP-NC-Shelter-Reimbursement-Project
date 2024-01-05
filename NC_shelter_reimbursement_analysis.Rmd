@@ -20,14 +20,19 @@ When removing years where facilities didn't report an operating cost, operation 
 
 
 
+```{r, include = FALSE}
+
+
+```
+
 
 ```{r, include = FALSE}
 #Working Directory
 #Desktop
-setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+#setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 #Laptop
-#setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 
 ###Libraries
@@ -48,6 +53,10 @@ NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %
 
 ```{r}
 
+species_count <-  data.frame(table(species_table$Species)) %>% 
+  mutate(Species = tolower(Var1)) %>% 
+  group_by(Species) %>% 
+  summarise(Count = n())
 
 
 
