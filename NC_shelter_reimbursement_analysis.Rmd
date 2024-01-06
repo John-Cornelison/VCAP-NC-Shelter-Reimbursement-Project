@@ -29,10 +29,10 @@ When removing years where facilities didn't report an operating cost, operation 
 ```{r, include = FALSE}
 #Working Directory
 #Desktop
-#setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 #Laptop
-setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+#setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 
 ###Libraries
@@ -47,11 +47,18 @@ NC_reimbursements_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = 
 
 NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %>% 
   mutate(Year = as.character(Year))
+species_table_condensed <- read_csv("species_table_condensed.csv") %>% 
+  select(-...1)
 
 ```
 
 
 ```{r}
+
+species_condensed_count <- species_table_condensed %>% 
+  group_by(Species_Condensed) %>% 
+  summarise(Count = sum(Intake))
+
 
 species_count <-  data.frame(table(species_table$Species)) %>% 
   mutate(Species = tolower(Var1)) %>% 
