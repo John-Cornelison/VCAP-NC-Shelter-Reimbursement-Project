@@ -29,10 +29,10 @@ When removing years where facilities didn't report an operating cost, operation 
 ```{r, include = FALSE}
 #Working Directory
 #Desktop
-#setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 #Laptop
-setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+#setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 
 ###Libraries
@@ -40,6 +40,7 @@ library(plotly)
 library(tidyverse)
 library(readxl)
 library(googlesheets4)
+library(stringr)
 
 
 ###Reading in Data
@@ -47,7 +48,8 @@ NC_shelter_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Shelte
 NC_reimbursements_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Reimbursement Final")
 
 species_table_condensed <- read_csv("species_table_condensed.csv") %>% 
-  select(-...1)
+  select(-...1) %>% 
+  mutate(Species_Condensed = stringr::str_to_title(Species_Condensed))
 
 NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %>% 
   mutate(Year = as.character(Year))
@@ -56,28 +58,29 @@ NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %
 ```
 
 
-```{r}
-gs4_deauth()
-gs4_auth()
-
-library(googlesheets4)
-gs4_auth(
-  scopes = "https://www.googleapis.com/auth/spreadsheets"
-)
-
-my_sheet <- gs4_create("Animal Count and Catagorization")
-
-write_sheet(species_condensed_count, ss = my_sheet)
+```{r, include=FALSE}
+#This block of code was used for sharing information with colaborator
 
 
-species_condensed_count <- species_table_condensed %>% 
-  group_by(Species_Condensed, Species) %>% 
-  summarise(Count = sum(Intake))
+# species_condensed_count <- species_table_condensed %>% 
+#   group_by(Species_Condensed) %>% 
+#   summarise(Count = sum(Intake))
+# 
+# 
+# species_count <- species_table_condensed %>% 
+#   group_by(Species_Condensed, Species) %>% 
+#   summarise(Count = sum(Intake))
 
 
-species_count <- species_table %>% 
-  group_by(Species) %>% 
-  summarise(Count = sum(Intake))
+# gs4_deauth()
+# gs4_auth()
+# 
+# my_sheet <- gs4_create("Animal Count and Catagorization")
+# 
+# write_sheet(species_condensed_count, ss = my_sheet)
+# write_sheet(species_count, ss = my_sheet)
+# 
+
 
 
 
@@ -88,7 +91,6 @@ species_count <- species_table %>%
 
 ```{r, include = FALSE}
 #Data Cleaning
-
 
 species_table <- NC_shelter_raw %>% 
   select(1:4, 7:874) %>% 
@@ -120,6 +122,13 @@ expenses_table <- NC_shelter_raw %>%
 
 reimbursements_table <- NC_reimbursements_raw %>% 
   mutate(across(c(5:28), as.numeric))
+
+## Some of the numbers needed to be updated because of reviced late submissions
+
+## 2019
+species_table_prac <- species_table %>%
+  mutate(Intake = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Species == "Dog"))
+  mutate(Outcome = Adopted + Euthanized + Returned)
 
 
 ```
@@ -198,6 +207,8 @@ op_cost_boxplot <- op_cost_boxplot %>% layout(
 
 
 ```
+
+## Do rising tides really lift all boats {.tabset}
 
 
 ### Total Intakes by Year in North Carolina
