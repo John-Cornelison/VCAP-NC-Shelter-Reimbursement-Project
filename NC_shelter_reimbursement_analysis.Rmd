@@ -62,9 +62,9 @@ NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %
 #This block of code was used for sharing information with colaborator
 
 
-# species_condensed_count <- species_table_condensed %>% 
-#   group_by(Species_Condensed) %>% 
-#   summarise(Count = sum(Intake))
+species_condensed_count <- species_table_condensed %>%
+  group_by(Species_Condensed) %>%
+  summarise(Count = sum(Intake))
 # 
 # 
 # species_count <- species_table_condensed %>% 
@@ -105,29 +105,147 @@ species_table <- NC_shelter_raw %>%
   mutate(remove_row = case_when(Intake == 0 & Adopted == 0 & Euthanized == 0 & Returned == 0 & Euthanized == 0 ~ TRUE,
                                 TRUE ~ FALSE)) %>% 
   filter(remove_row == FALSE) %>% 
-  mutate(Outcome = Adopted + Euthanized + Returned) %>% 
   select(-remove_row) %>% 
+  mutate(Intake = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 624,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 1012,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 64,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 55,
+                            TRUE ~ Intake),
+         Adopted = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 380,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 98,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 0,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 0,
+                            TRUE ~ Adopted),
+         Returned = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 58,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 16,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 0,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 55,
+                            TRUE ~ Returned),
+         Euthanized = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 186,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 899,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 64,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 0,
+                            TRUE ~ Euthanized)) %>%
+  #2020
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Cat", Intake = 387, Adopted = 213, Returned = 13, Euthanized = 77) %>%
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Raccoon", Intake = 10, Adopted = 0, Returned = 0, Euthanized = 3) %>%
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Opossum", Intake = 3, Adopted = 0, Returned = 0, Euthanized = 1) %>%
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Fox", Intake = 1, Adopted = 0, Returned = 0, Euthanized = 0) %>%
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Bat", Intake = 4, Adopted = 0, Returned = 0, Euthanized = 2) %>%
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+                             Species = "Skunk", Intake = 1, Adopted = 0, Returned = 0, Euthanized = 0) %>%
+  add_row(LIC = "71", Year = 2020, "County/City" = "Stanly", Facility_Name = "Stanly County Animal Protective Ser",
+          Species = "Dog", Intake = 385, Adopted = 207, Returned = 106, Euthanized = 193) %>%
+  add_row(LIC = "71", Year = 2020, "County/City" = "Stanly", Facility_Name = "Stanly County Animal Protective Ser",
+          Species = "Cat", Intake = 628, Adopted = 324, Returned = 10, Euthanized = 362) %>% 
+  add_row(LIC = "129", Year = 2020, "County/City" = "Tyrrell", Facility_Name = "Tyrrell County Animal Shelter",
+          Species = "Dog", Intake = 51, Adopted = 34, Returned = 9, Euthanized = 7) %>%
+  add_row(LIC = "129", Year = 2020, "County/City" = "Tyrrell", Facility_Name = "Tyrrell County Animal Shelter",
+          Species = "Cat", Intake = 142, Adopted = 32, Returned = 1, Euthanized = 109) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Dog", Intake = 926, Adopted = 376, Returned = 359, Euthanized = 134) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Cat", Intake = 530, Adopted = 394, Returned = 33, Euthanized = 74) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Rabbit", Intake = 25, Adopted = 25, Returned = 0, Euthanized = 0) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Raccoon", Intake = 0, Adopted = 0, Returned = 0, Euthanized = 10) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Opossum", Intake = 0, Adopted = 0, Returned = 0, Euthanized = 3) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Bat", Intake = 0, Adopted = 0, Returned = 0, Euthanized = 3) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Coyote", Intake = 0, Adopted = 0, Returned = 0, Euthanized = 2) %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Species = "Chicken", Intake = 15, Adopted = 8, Returned = 2, Euthanized = 5) %>% 
+  #2021
+  add_row(LIC = "377", Year = 2021, "County/City" = "Chatham", Facility_Name = "Chatham County Sheriff'S Office Animal Resource Center",
+          Species = "Dog", Intake = 451, Adopted = 60, Returned = 136, Euthanized = 59) %>%
+  add_row(LIC = "377", Year = 2021, "County/City" = "Chatham", Facility_Name = "Chatham County Sheriff'S Office Animal Resource Center",
+          Species = "Cat", Intake = 494, Adopted = 142, Returned = 8, Euthanized = 125) %>% 
+  add_row(LIC = "377", Year = 2021, "County/City" = "Chatham", Facility_Name = "Chatham County Sheriff'S Office Animal Resource Center",
+          Species = "Rabbit", Intake = 17, Adopted = 2, Returned = 2, Euthanized = 6) %>% 
+  add_row(LIC = "377", Year = 2021, "County/City" = "Chatham", Facility_Name = "Chatham County Sheriff'S Office Animal Resource Center",
+          Species = "Raccoon", Intake = 17, Adopted = 2, Returned = 2, Euthanized = 7) %>% 
+  add_row(LIC = "377", Year = 2021, "County/City" = "Chatham", Facility_Name = "Chatham County Sheriff'S Office Animal Resource Center",
+          Species = "Opossum", Intake = 16, Adopted = 2, Returned = 1, Euthanized = 7) %>%
+  
+  mutate(Outcome = Adopted + Euthanized + Returned) %>% 
   relocate(Outcome, .after = Intake)
 
 write_csv(species_table, "species_table.csv")
 
 expenses_table <- NC_shelter_raw %>% 
   select(1:6) %>% 
+  add_row(LIC = "92", Year = 2020, "County/City" = "Jackson", Facility_Name = "Jackson County Animal Shelter",
+          Operating_Expense = "316891", Cost_Per_Animal = "394.63") %>% 
+  add_row(LIC = "72", Year = 2020, "County/City" = "Stanly", Facility_Name = "Stanly County Animal Protective Ser",
+          Operating_Expense = "475000", Cost_Per_Animal = "468.90") %>%
+  add_row(LIC = "129", Year = 2020, "County/City" = "Tyrrell", Facility_Name = "Tyrrell County Animal Shelter",
+          Operating_Expense = "11214.67", Cost_Per_Animal = "57.81") %>% 
+  add_row(LIC = "16", Year = 2020, "County/City" = "New Hanover", Facility_Name = "New Hanover Co Sheriffs Ofc Animal Svcs Unit",
+          Operating_Expense = "1537722", Cost_Per_Animal = "870") %>% 
+  add_row(LIC = "377", Year = 2021, "County/City" = "Chatham", Facility_Name = "Chatham County Sheriff'S Office Animal Resource Center",
+          Operating_Expense = "1104472", Cost_Per_Animal = "1110.02") %>% 
   group_by(Operating_Expense) %>% 
   mutate(Operating_Expense = as.numeric(Operating_Expense),
          Cost_Per_Animal = as.numeric(Cost_Per_Animal),
-         LIC = as.numeric(LIC)) 
+         LIC = as.numeric(LIC))
+  
+  
 
 
 
 reimbursements_table <- NC_reimbursements_raw %>% 
   mutate(across(c(5:28), as.numeric))
 
-## Some of the numbers needed to be updated because of reviced late submissions
+## Some of the numbers needed to be updated because of revised late submissions
 
 ## 2019
 species_table_prac <- species_table %>%
-  mutate(Intake = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Species == "Dog"))
+  select(-Outcome) %>% 
+  mutate(Intake = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 624,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 1012,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 64,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 55,
+                            TRUE ~ Intake),
+         Adopted = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 380,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 98,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 0,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 0,
+                            TRUE ~ Adopted),
+         Returned = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 58,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 16,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 0,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 55,
+                            TRUE ~ Returned),
+         Euthanized = case_when(Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Dog" ~ 186,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Cat" ~ 899,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Raccoon" ~ 64,
+                            Facility_Name == "Montgomery Co. Animal Control Facility" & Year == 2019 & Species == "Opossum" ~ 0,
+                            TRUE ~ Euthanized)) %>%
+  #2020
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
+  add_row(LIC = 92, Year = 2020, "County/City" = "Jackson", Facility_name = "Jackson County Animal Shelter",
+                             Species = "Dog", Intake = 416, Adopted = 149, Returned = 79, Euthanized = 18) %>%
   mutate(Outcome = Adopted + Euthanized + Returned)
 
 
