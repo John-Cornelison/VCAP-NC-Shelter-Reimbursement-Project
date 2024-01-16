@@ -13,15 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * There are instances when there is an operating and cost-per-animal cost with 0 intakes. I assume this is taking care of existing animals
 * There are instances when there is no operating and cost-per-animal cost with multiple intakes. Just didn't get the operation cost.
-* Is the cost-per-animal calculated by the number of animals entering the shelter that year, or the total number of animals in the shelter 
-
-from previous year too. The cost per animal is not calculated by the current years intake. So, I feel like it is possible that higher cost could be an indicator of longer LOS. It also could be an indicator of type of shelter/rescue. There may be individual person rescues for example.
+* Is the cost-per-animal calculated by the number of animals entering the shelter that year, or the total number of animals in the shelter from previous year too. The cost per animal is not calculated by the current years intake. So, I feel like it is possible that higher cost could be an indicator of longer LOS. It also could be an indicator of type of shelter/rescue. There may be individual person rescues for example.
 
 Live Release Rate: Adopted + Returned / Adopted + Returned + Euthanized
 
 Boxplot cleaning info:
 
 When removing years where facilities didn't report an operating cost, operation costs less than 6, and outliers, there were 1072 instances from 2010 to 2022
+
 
 
 
@@ -34,19 +33,20 @@ When removing years where facilities didn't report an operating cost, operation 
 ```{r, include = FALSE}
 #Working Directory
 #Desktop
-#setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 #Laptop
-setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+#setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 
 ###Libraries
 library(plotly)
+library(patchwork)
 library(tidyverse)
 library(readxl)
 library(googlesheets4)
 library(stringr)
-
+library(reactable)
 
 ###Reading in Data
 NC_shelter_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Shelter Final")
@@ -269,10 +269,10 @@ reimbursements_table <- NC_reimbursements_raw %>%
 ### Reading in Inflation adjusted expenses table and condensed species table
 
 #Desktop
-#setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 #Laptop
-setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+#setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
 
 
 species_table_condensed <- read_csv("species_table_condensed.csv") %>% 
@@ -288,12 +288,108 @@ NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %
 ```
 
 
-# Graphics
+
 
 There were 3 different outcomes listed for each shelter, adopted, returned, and euthanized. The adopted, returned, and euthanized rate is calculated by outcome / sum(3 outcomes).
 
+```{r, echo = FALSE, warning=FALSE}
+#Functions
+
+cat_dog_other <- species_table_condensed %>% 
+  mutate(cat_dog_other_col = case_when(Species_Condensed == "Cat" ~ "Cat",
+                                       Species_Condensed == "Dog" ~ "Dog",
+                                       TRUE ~ "Other")) %>% 
+  group_by(Year, cat_dog_other_col) %>% 
+  summarise(total_intakes = sum(Intake),
+            total_live_outcomes = sum(live_outcome),
+            total_euth = sum(Euthanized),
+            LOR = total_live_outcomes/sum(Outcome),
+            euth_rate = total_euth/sum(Outcome))
+  
+
+plot <- species_table_condensed %>% 
+      filter(!Species_Condensed %in% c("Cat", "Dog")) %>% 
+  group_by(Year, Species_Condensed) %>% 
+  summarise(total_intakes = sum(Intake),
+            total_live_outcomes = sum(live_outcome),
+            total_euth = sum(Euthanized),
+            LOR = total_live_outcomes/sum(Outcome),
+            euth_rate = total_euth/sum(Outcome))
+
+
+create_plotly_graph <- function(yvar, yaxis_title){
+  
+  plot <- species_table_condensed %>% 
+    filter(!Species_Condensed %in% c("Cat", "Dog")) %>% 
+  group_by(Year, Species_Condensed) %>% 
+  summarise(total_intakes = sum(Intake),
+            total_live_outcomes = sum(live_outcome),
+            total_euth = sum(Euthanized),
+            LOR = total_live_outcomes/sum(Outcome),
+            euth_rate = total_euth/sum(Outcome)) %>%
+  plot_ly(type = 'scatter', mode = 'line', x = ~Year, y = ~yvar, color = ~Species_Condensed)
+  
+  plot <- plot %>% layout(yaxis = list(title = yaxis_title))
+  
+  
+}
+
+
+create_cat_dog_other_graph <- function(yvar, yaxis_title){
+  
+  plot <- cat_dog_other %>% 
+  group_by(Year, cat_dog_other_col) %>% 
+  plot_ly(type = 'scatter', mode = 'line', x = ~Year, y = ~yvar, color = ~cat_dog_other_col)
+  
+  plot <- plot %>% layout(yaxis = list(title = yaxis_title))
+  
+  
+}
+
+#Use plot df to select yvars
+
+```
+
+
 
 ```{r, echo = FALSE, warning= FALSE, include=FALSE}
+
+intake_plot <- create_plotly_graph(plot$total_intakes, "Intakes")
+
+LON_plot <- create_plotly_graph(plot$total_live_outcomes, "Number of Live Outcomes")
+
+LOR_plot <- create_plotly_graph(plot$LOR, "Live Outcome Rate")
+
+Euth_N_plot <- create_plotly_graph(plot$total_euth, "Number of Euthanizations")
+
+Euth_R_plot <- create_plotly_graph(plot$euth_rate, "Euthanization Rate")
+
+CDO_intake_plot <- create_cat_dog_other_graph(cat_dog_other$total_intakes, "Intakes")
+
+CDO_LON_plot <- create_cat_dog_other_graph(cat_dog_other$total_live_outcomes, "Number of Live Outcomes")
+
+CDO_LOR_plot <- create_cat_dog_other_graph(cat_dog_other$LOR, "Live Outcome Rate")
+
+CDO_Euth_N_plot <- create_cat_dog_other_graph(cat_dog_other$total_euth, "Number of Euthanizations")
+
+CDO_Euth_R_plot <- create_cat_dog_other_graph(cat_dog_other$euth_rate, "Euthanization Rate")
+
+
+
+
+species_condensed_count <- species_table_condensed %>%
+  group_by(Species_Condensed) %>%
+  summarise(Count = sum(Intake))
+
+intake_species_count_table <- reactable(species_condensed_count)
+
+
+#cat_dog_intake_graph <- create_plotly_intake_graph(c("Cat", "Dog"))
+
+#higher_intake_other_graph <- create_plotly_intake_graph(c("Raccoon", "Bird", "Pocket Pet", "Wildlife", "Rabbit"))
+
+#lower_intake_other_graph <- create_plotly_intake_graph(c("Reptile", "Chicken", "Other", "Farm Animal", "Bat", "Opossum"))
+
 
 aggregate_by_year <- species_table %>%
   mutate(Species = case_when(Species == "Dog" ~ "Dog",
@@ -320,12 +416,22 @@ outcome_rates_by_year <- species_table %>%
          returned_rate = round(total_returned/total_outcomes, 2),
          euthanized_rate = round(total_euthanized/total_outcomes, 2))
 
-live_release_cat_dogs <- species_table_condensed %>% 
-  filter(Species_Condensed %in% c("Cat", "Dog")) %>% 
+live_release_all <- species_table_condensed %>% 
   group_by(Species_Condensed, Year) %>% 
   summarise(total_outcomes = sum(Outcome),
             total_live_outcomes = sum(live_outcome)) %>% 
   mutate(live_release_rate = total_live_outcomes/total_outcomes)
+
+
+cat_dogs_base_table <- species_table_condensed %>% 
+  filter(Species_Condensed %in% c("Cat", "Dog")) %>% 
+  group_by(Species_Condensed, Year) %>% 
+  summarise(total_outcomes = sum(Outcome),
+            total_live_outcomes = sum(live_outcome),
+            total_euth = sum(Euthanized),
+            total_intake = sum(Intake)) %>% 
+  mutate(live_release_rate = total_live_outcomes/total_outcomes,
+         euthanized_rate = total_euth/total_outcomes) 
 
 live_release_other <- species_table_condensed %>% 
   filter(!Species_Condensed %in% c("Cat", "Dog")) %>% 
@@ -351,7 +457,16 @@ less_66_dat <- live_release_other %>%
   filter(Species_Condensed %in% less_66)
 
 
-live_release_cat_dogs_graphic <- plot_ly(data = live_release_cat_dogs, type = "scatter", mode = "line", x = ~Year, y = ~live_release_rate, color = ~Species_Condensed)
+live_release_cat_dogs_graphic <- plot_ly(data = cat_dogs_base_table, type = "scatter", mode = "line", x = ~Year, y = ~live_release_rate, color = ~Species_Condensed)
+
+intake_cat_dogs_plot <- plot_ly(data = cat_dogs_base_table, type = "scatter", mode = "line", x = ~Year, y = ~total_intake, color = ~Species_Condensed)
+
+live_release_count_cats_dogs_plot <- plot_ly(data = cat_dogs_base_table, type = "scatter", mode = "line", x = ~Year, y = ~total_live_outcomes, color = ~Species_Condensed)
+
+euth_count_cats_dogs_plot <- plot_ly(data = cat_dogs_base_table, type = "scatter", mode = "line", x = ~Year, y = ~total_euth, color = ~Species_Condensed)
+
+euth_rate_cats_dogs_plot <- plot_ly(data = cat_dogs_base_table, type = "scatter", mode = "line", x = ~Year, y = ~euthanized_rate, color = ~Species_Condensed)
+
 
 live_release_greater_other <- plot_ly(data = greater_66_dat, type = "scatter", mode = "line", x = ~Year, y = ~live_release_rate, color = ~Species_Condensed)
 
@@ -366,6 +481,11 @@ adopted_rate <- plot_ly(data = outcome_rates_by_year, type = 'scatter', mode = '
 returned_rate <- plot_ly(data = outcome_rates_by_year, type = 'scatter', mode = 'line', x = ~Year, y = ~returned_rate, color = ~Species)
 
 euthanized_rate <- plot_ly(data = outcome_rates_by_year, type = 'scatter', mode = 'line', x = ~Year, y = ~euthanized_rate, color = ~Species)
+
+
+
+
+
 
 
 
@@ -400,20 +520,215 @@ op_cost_boxplot <- op_cost_boxplot %>% layout(
 
 ```
 
-## {.tabset}
 
-### Do rising tides really lift all boats
+## Do rising tides really lift all boats
 
-#### Live Release Rate Cats and Dogs
 
-As dogs and cat live release outcomes get better, can the same be said for other animals. To start, we can see from the graphic below that over the years, the live release rate of cats and dogs has increased. Next, we will look at other animals
+#### Cat and Dog Plots
+
+We can see from these plots that over time, the outcomes of cats and dogs have gotten better, but can we say the same for other animals.
+
 
 ```{r, echo = FALSE, warning = FALSE}
 
+intake_cat_dogs_plot 
+
+live_release_count_cats_dogs_plot 
+
 live_release_cat_dogs_graphic
+
+euth_count_cats_dogs_plot
+
+euth_rate_cats_dogs_plot
 
 
 ```
+
+
+#### Intakes Species Condensed Count Table
+
+```{r, echo=FALSE, warning=FALSE}
+
+intake_species_count_table
+
+```
+
+## Intake, Live Outcome, and Euthanized Graphics of Other Animals{.tabset}
+
+I created two instances of the same graphics for the purpose of making comparisons.
+
+### Intake 
+
+```{r, echo =FALSE, warning=FALSE}
+
+intake_plot
+
+```
+
+### LiveOutcomeN
+
+```{r, echo = FALSE, warning=FALSE}
+
+LON_plot
+
+```
+
+
+### LiveOutcomeR
+
+```{r, echo = FALSE, warning=FALSE}
+
+LOR_plot
+
+```
+
+
+### EuthN
+
+```{r, echo = FALSE, warning=FALSE}
+
+Euth_N_plot
+
+```
+
+
+### EuthR
+
+```{r, echo = FALSE, warning=FALSE}
+
+Euth_R_plot
+
+```
+
+
+## {-}
+
+
+## {.tabset}
+
+### Intake 
+
+```{r, echo =FALSE, warning=FALSE}
+
+intake_plot
+
+```
+
+### LiveOutcomeN
+
+```{r, echo = FALSE, warning=FALSE}
+
+LON_plot
+
+```
+
+
+### LiveOutcomeR
+
+```{r, echo = FALSE, warning=FALSE}
+
+LOR_plot
+
+```
+
+
+### EuthN
+
+```{r, echo = FALSE, warning=FALSE}
+
+Euth_N_plot
+
+```
+
+
+### EuthR
+
+```{r, echo = FALSE, warning=FALSE}
+
+Euth_R_plot
+
+```
+
+
+## {-}
+
+## Cat, Dog, and Other Animals Graphics {.tabset}
+
+
+### Intake 
+
+```{r, echo =FALSE, warning=FALSE}
+
+CDO_intake_plot
+
+```
+
+### LiveOutcomeN
+
+```{r, echo = FALSE, warning=FALSE}
+
+CDO_LON_plot
+
+```
+
+
+### LiveOutcomeR
+
+```{r, echo = FALSE, warning=FALSE}
+
+CDO_LOR_plot
+
+```
+
+
+### EuthN
+
+```{r, echo = FALSE, warning=FALSE}
+
+CDO_Euth_N_plot
+
+```
+
+
+### EuthR
+
+```{r, echo = FALSE, warning=FALSE}
+
+CDO_Euth_R_plot
+
+```
+
+
+## {-}
+
+### John's Findings
+
+* We can see that Intake has drastically decreased for Cats and Dogs. By about half for both cats and dogs. We can also see that the total number of live outcomes has remained about the same for Dogs between the years 2010 and 2019. Interestingly, cats have higher number of live outcomes. However, For both cats and dogs, the live release rate has increased by about 40%. With almost no increase in the number of live outcomes for dogs, we can probably assume that this increase in live release rate is heavily influenced by the lower number of intakes for dogs. We can also assume it played an impact in cats higher live release rate, but higher number of live outcomes also played a part.
+
+* Compared to the number of cats and dogs, other animals make up a tiny portion of all animals entering the shelter. There are about 3.1 million dogs and cats that entered shelter within the last 12 years compared to only about 100,000 other animals. They made up only 3.13 percent of total animals.
+
+* One of the primary goals of shelters is to find new homes for cats and dogs, but what about the other animals. If we look at the intake for Raccoons, Opossums, Birds, and Bats,  we can see that over the course of the 12 years, their intake has lowered, some at a higher rate than others. However, if we look at their euthanization rate, it has stayed about the same from 2010 to 2022 with dips and peaks between. The euthanization count has lowered, but this is most likely because there are less of these animals coming in.
+
+* Each of the animals have a purpose/role in our society. Some are valuable, some are companions, and some are pests. Depending on which category the animal falls into, plays a big part in what happens to them. Lets take farm animals for example. If we look at their intake, we can see that both 2010 and 2022 had about the same number of farm animals entering the shelter with some peaks and valleys in between. We can also see that there live outcome ratio never dipped below 0.80 and got has high as 0.96. In part, this may because farm animals are valuable in that they provide food, or resources we can use. A farmer may be incentivized to pick up a low priced cow from the shelter if they have room to care for it.
+
+* When looking at just Raccoon, Wildlife, and Bats, we can see that there live outcome ratio is less than 0.10 which in turn means their euthanization rate is extremely high. We can see that the euthanization trend line closely follows the intake trendline. Potentially, the reason so many raccoons and bats are euthanized is because of the potential diseases that they carry. Both bats and raccoons carry rabies. So, instead of spending resources to find a way to release the raccoons and bats in the wild, it is cheaper to simply euthanize them since they are not considered pets, can be percieved to be a nucience, and a public health hazard if released close to other people. It is best if people just leave them be instead of taking them to an animal shelter. Not exactly sure what the best solution is. It does not feel right just euthanizing them, but don't want anyone to contract a disease from them. I wonder how much it would cost to relocate them. For the wildlife category, I believe the high rate may be caused from euthanizing injured wildlife as well as not being able to relocate them to the wild. What do you do with a deer that wanders into someones yard? 
+
+
+### Older Plots
+
+#### Intake Graphs for Other Animals
+
+```{r, warning=FALSE, echo=FALSE}
+
+#higher_intake_other_graph
+
+#live_release_other_graphic
+
+#lower_intake_other_graph
+
+
+```
+
 
 #### Live Release Rate for Other Animals
 
@@ -475,14 +790,3 @@ euthanized_rate
 
 ```
 
-### Operation Costs
-
-#### Operation Cost Boxplot
-
-```{r, echo = FALSE}
-
-
-op_cost_boxplot
-
-
-```
