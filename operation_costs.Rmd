@@ -1,0 +1,65 @@
+---
+title: "NC_shelter_reimbursement_analysis"
+author: "John Cornelison"
+date: "12/14/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Research Notes
+
+* There are instances when there is an operating and cost-per-animal cost with 0 intakes. I assume this is taking care of existing animals
+* There are instances when there is no operating and cost-per-animal cost with multiple intakes. Just didn't get the operation cost.
+* Is the cost-per-animal calculated by the number of animals entering the shelter that year, or the total number of animals in the shelter from previous year too. The cost per animal is not calculated by the current years intake. So, I feel like it is possible that higher cost could be an indicator of longer LOS. It also could be an indicator of type of shelter/rescue. There may be individual person rescues for example.
+
+Live Release Rate: Adopted + Returned / Adopted + Returned + Euthanized
+
+Boxplot cleaning info:
+
+When removing years where facilities didn't report an operating cost, operation costs less than 6, and outliers, there were 1072 instances from 2010 to 2022
+
+
+
+
+```{r, include = FALSE}
+
+
+```
+
+
+```{r, include = FALSE}
+#Working Directory
+#Desktop
+setwd("C:/Users/john/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+
+#Laptop
+#setwd("C:/Users/johnc/Documents/GitHub_Data/VCAP-NC-Shelter-Reimbursement-Project-Data")
+
+
+###Libraries
+library(plotly)
+library(patchwork)
+library(tidyverse)
+library(readxl)
+library(googlesheets4)
+library(stringr)
+library(reactable)
+library(scales)
+library(DT)
+
+###Reading in Data
+NC_shelter_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Shelter Final")
+NC_reimbursements_raw <- read_xlsx("Shelter&ReimburseReformatted.xlsx", sheet = "Reimbursement Final")
+
+species_table_condensed <- read_csv("species_table_condensed.csv") %>% 
+  select(-...1) %>% 
+  mutate(Species_Condensed = stringr::str_to_title(Species_Condensed),
+         live_outcome = Adopted + Returned) 
+
+NC_inflation_adjusted_expenses_table <- read_csv("inf_adj_expenses_table.csv") %>% 
+  mutate(Year = as.character(Year))
+
+```
